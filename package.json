@@ -1,0 +1,32 @@
+{
+  "name": "nice_pw_assignment",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test_all": "npx playwright test --headed",
+    "test_chrome": "npx playwright test --headed --project=chromium",
+    "test_firefox": "npx playwright test --headed --project=firefox",
+    "test_webkit": "npx playwright test --headed --project=webkit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NRO1/NICE_PW_Assignment.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NRO1/NICE_PW_Assignment/issues"
+  },
+  "homepage": "https://github.com/NRO1/NICE_PW_Assignment#readme",
+  "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.6.0"
+  }
+}
