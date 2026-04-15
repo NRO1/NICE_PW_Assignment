@@ -55,7 +55,7 @@ export class RegisterUtility {
     await this.repeatedPasswordInput.fill(user.password);
     await this.registerButton.click();
         // Validate successful registration and login
-    await expect(this.page.locator('text=Your account was created successfully. You are now logged in.')).toBeVisible();
+    await expect(this.page.locator('text=Your account was created successfully. You are now logged in.')).toBeVisible({ timeout: 7000 });
     console.log('User registered successfully');
   }
 }

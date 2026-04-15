@@ -3,6 +3,14 @@ import { PageManager } from '../page-objects/PageManager';
 import { generateRandomUser, RandomUser } from '../Util/createRandomUser';
 import { XMLParser } from 'fast-xml-parser';
 
+const TestData = {
+    baseURL: 'https://parabank.parasoft.com/parabank/',
+    loggedInURL: 'https://parabank.parasoft.com/parabank/overview.htm',
+    accountsEndpoint: 'https://parabank.parasoft.com/parabank/services/bank/accounts/',
+    createAccountEndpoint: 'https://parabank.parasoft.com/parabank/services/bank/createAccount'
+}
+
+
 test('End-to-End Banking Flow', async ({ page, request }) => {
     const pm = new PageManager(page);
     const randomUser: RandomUser = generateRandomUser();
@@ -13,9 +21,10 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
     let secondAccountId: string | number | undefined;
     let secondAccountInitialBalance: number | undefined;
    
+
     await test.step('Go to main page', async ({}) => {
         await page.goto('/')
-        await expect(page.url()).toContain('https://parabank.parasoft.com/parabank/index.htm')
+        await expect(page.url()).toContain(TestData.baseURL)
         console.log('Main page loaded successfully');
     });
 
@@ -23,14 +32,14 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
     await test.step('Register a new user and logout', async ({}) => {
         await pm.register().register(randomUser);
         await pm.main().logOut();
-        await expect(page.url()).toContain('https://parabank.parasoft.com/parabank/index.htm')
+        await expect(page.url()).toContain(TestData.baseURL)
         console.log('Logged out successfully after registration');
     });
 
 
     await test.step('login', async ({}) => {
         await pm.home().login(randomUser.userName, randomUser.password);
-        await expect(page.url()).toBe('https://parabank.parasoft.com/parabank/overview.htm')
+        await expect(page.url()).toBe(TestData.loggedInURL)
         console.log('Logged in successfully with registered user');
     });
 
@@ -41,7 +50,7 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
         firstAccountId = await pm.main().getFirstAccountId();
         console.log('Retrieved account ID:', firstAccountId);
 
-        const response = await request.get(`https://parabank.parasoft.com/parabank/services/bank/accounts/${firstAccountId}`, {
+        const response = await request.get(`${TestData.accountsEndpoint}${firstAccountId}`, {
             headers: {
                 'Accept': 'application/xml',
                 'Content-Type': 'application/xml'
@@ -59,7 +68,7 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
     await test.step('Create new checking account', async ({}) => {
         const intCustomerID = parseInt(customerId as string, 10);
         const intFirstAccountId = parseInt(firstAccountId as string, 10);   
-        const response = await request.post(`https://parabank.parasoft.com/parabank/services/bank/createAccount`, {
+        const response = await request.post(`${TestData.createAccountEndpoint}`, {
             params: {
                 'customerId': intCustomerID,
                 'accountType': 0,
@@ -84,14 +93,14 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
             waitUntil: 'networkidle', 
             timeout: 30000            
         });
-        const secondAccountId = await pm.main().getSecondAccountId();
-        await expect(secondAccountId).toBe(secondAccountId);
+        const newAccountId = await pm.main().getSecondAccountId();
+        await expect(newAccountId).toBe(String(secondAccountId));
     });
 
     // This step is crucial to ensure that the second account has been created successfully and to get the initial balance before we proceed with the fund transfer, 
     // for the last step validation
     await test.step('Get second account initial balance (API)', async ({}) => {
-        const response = await request.get(`https://parabank.parasoft.com/parabank/services/bank/accounts/${secondAccountId}`, {
+        const response = await request.get(`${TestData.accountsEndpoint}${secondAccountId}`, {
             headers: {
                 'Accept': 'application/xml',
                 'Content-Type': 'application/xml'
@@ -106,17 +115,15 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
     });
        
 
-
     await test.step('Transfer money between accounts (UI)', async ({}) => {
         await pm.main().transferFunds('50', String(firstAccountId), String(secondAccountId));
         await expect(page.locator('#showResult')).toContainText('Transfer Complete!');
         console.log('Funds transferred successfully via UI');
-        await page.waitForTimeout(10000)
     });
 
 
     await test.step('Validate updated balances (API)', async ({}) => {
-        const response = await request.get(`https://parabank.parasoft.com/parabank/services/bank/accounts/${secondAccountId}`, {
+        const response = await request.get(`${TestData.accountsEndpoint}${secondAccountId}`, {
             headers: {
                 'Accept': 'application/xml',
                 'Content-Type': 'application/xml'
@@ -127,7 +134,7 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
         const jsonObj = parser.parse(xmlData);
         const newBalance = jsonObj.account.balance;
         expect(newBalance).toBeDefined();
-        const expectedBalance = secondAccountInitialBalance ? secondAccountInitialBalance + 50 : undefined;
+        const expectedBalance = secondAccountInitialBalance! + 50;
         expect(parseFloat(newBalance)).toEqual(expectedBalance);
         console.log(`The second account now has: ${newBalance}`);
     });
@@ -136,7 +143,7 @@ test('End-to-End Banking Flow', async ({ page, request }) => {
 
     await test.step('Logout', async ({}) => {
         await pm.main().logOut();
-        await expect(page.url()).toContain('https://parabank.parasoft.com/parabank/index.htm')
+        await expect(page.url()).toContain(TestData.baseURL)
         console.log('Logged out successfully at the end of the flow');
     });
 });

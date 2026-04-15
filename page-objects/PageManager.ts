@@ -9,8 +9,6 @@ export class PageManager {
     private readonly homePage: HomePage;
     private readonly mainPage: MainPage;
 
-
-
     constructor(page: Page) {
         this.page = page;
         this.registerUtility = new RegisterUtility(page);
@@ -29,5 +27,4 @@ export class PageManager {
     main() {
         return this.mainPage;
     }   
-
 }
